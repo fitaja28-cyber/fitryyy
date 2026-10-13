@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Piket & Jadwal Kelas</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --bg:#0b0e1a;--bg2:#10142a;--card:#141935;--card2:#1a2042;--line:#262d5a;
+  --tx:#e8eaf8;--mut:#8f96c4;--acc:#8b7cf6;--acc2:#2dd4bf;--ok:#34d399;--warn:#fbbf24;--bad:#f43f7a;
+  --shadow:0 10px 30px rgba(0,0,0,.35);
+}
+:root[data-theme=light]{
+  --bg:#f4f5fb;--bg2:#ffffff;--card:#ffffff;--card2:#f0f1fa;--line:#dfe2f3;
+  --tx:#1c2040;--mut:#6a719c;--acc:#6d5ce8;--acc2:#0d9488;--ok:#059669;--warn:#d97706;--bad:#e11d63;
+  --shadow:0 10px 30px rgba(60,70,140,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--tx);
+  background-image:radial-gradient(800px 400px at 90% -10%,rgba(139,124,246,.15),transparent),radial-gradient(700px 400px at -10% 110%,rgba(45,212,191,.10),transparent);
+  background-attachment:fixed;font-size:15px;line-height:1.5}
+button,input,select{font:inherit;color:inherit}
+.app{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
+aside{background:var(--bg2);border-right:1px solid var(--line);padding:22px 16px;display:flex;flex-direction:column;gap:18px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;letter-spacing:-.2px}
+.brand .lg{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;font-size:20px}
+.brand small{display:block;font-weight:500;color:var(--mut);font-size:11px;letter-spacing:1.5px;text-transform:uppercase}
+nav{display:flex;flex-direction:column;gap:4px}
+nav button{display:flex;align-items:center;gap:12px;background:none;border:0;padding:11px 13px;border-radius:11px;color:var(--mut);cursor:pointer;text-align:left;font-weight:600;transition:.15s}
+nav button:hover{background:var(--card2);color:var(--tx)}
+nav button.on{background:linear-gradient(90deg,rgba(139,124,246,.22),rgba(139,124,246,.04));color:var(--tx);box-shadow:inset 3px 0 0 var(--acc)}
+nav .ic{font-size:18px;width:24px;text-align:center}
+nav .badge{margin-left:auto;background:var(--bad);color:#fff;border-radius:99px;font-size:11px;padding:1px 7px;font-weight:700}
+.side-foot{margin-top:auto;display:flex;flex-direction:column;gap:10px}
+.profile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+.profile .nm{font-weight:700}
+.profile .rl{color:var(--mut);font-size:12px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--card2);border-radius:10px;padding:3px;margin-top:10px}
+.seg button{border:0;background:none;padding:6px;border-radius:8px;cursor:pointer;color:var(--mut);font-weight:600;font-size:13px}
+.seg button.on{background:var(--acc);color:#fff}
+.mini{display:flex;gap:8px}
+.mini button{flex:1}
+main{padding:28px 32px 60px;max-width:1200px;width:100%}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:24px;flex-wrap:wrap}
+.eyebrow{display:flex;align-items:center;gap:10px;color:var(--acc);font-family:ui-monospace,Menlo,monospace;letter-spacing:3px;font-size:11px;text-transform:uppercase;margin-bottom:6px}
+.eyebrow:before{content:"";width:28px;height:2px;background:var(--acc)}
+h1{font-size:28px;letter-spacing:-.5px;line-height:1.2}
+h1 span{color:var(--acc)}
+.clock{text-align:right}
+.clock .t{font-family:ui-monospace,Menlo,monospace;font-size:26px;font-weight:700;color:var(--acc2)}
+.clock .d{color:var(--mut);font-size:13px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:1.4fr 1fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.card h3{font-size:14px;color:var(--acc);display:flex;align-items:center;gap:8px;margin-bottom:12px;letter-spacing:.2px}
+.card h3 .r{margin-left:auto;color:var(--mut);font-weight:500;font-size:12px}
+.hero{background:linear-gradient(135deg,rgba(139,124,246,.28),rgba(45,212,191,.14)),var(--card);position:relative;overflow:hidden}
+.hero .lbl{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--acc2);font-weight:700}
+.hero .mk{font-size:26px;font-weight:800;margin:6px 0 2px;letter-spacing:-.4px}
+.hero .meta{color:var(--mut);display:flex;gap:16px;flex-wrap:wrap;font-size:14px}
+.hero .cd{font-family:ui-monospace,Menlo,monospace;font-size:34px;font-weight:700;margin-top:14px}
+.hero .bar{height:6px;background:rgba(255,255,255,.12);border-radius:9px;margin-top:12px;overflow:hidden}
+.hero .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:9px;transition:width .6s}
+.stat .v{font-size:30px;font-weight:800;letter-spacing:-1px}
+.stat .l{color:var(--mut);font-size:13px}
+.stat .ico{float:right;font-size:22px;opacity:.9}
+.tl{display:flex;flex-direction:column;gap:10px}
+.tli{display:grid;grid-template-columns:62px 1fr auto;gap:12px;align-items:center;background:var(--card2);border-radius:12px;padding:10px 12px;border-left:4px solid var(--c,var(--acc))}
+.tli .tm{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--mut);line-height:1.3}
+.tli .nm{font-weight:700}
+.tli .sb{color:var(--mut);font-size:12.5px}
+.tli.now{box-shadow:0 0 0 1px var(--c),0 0 18px -4px var(--c)}
+.tli.past{opacity:.5}
+.pill{display:inline-block;padding:2px 10px;border-radius:99px;font-size:11.5px;font-weight:700;background:var(--card);border:1px solid var(--line);color:var(--mut)}
+.pill.ok{color:var(--ok);border-color:var(--ok)}
+.pill.warn{color:var(--warn);border-color:var(--warn)}
+.pill.bad{color:var(--bad);border-color:var(--bad)}
+.pill.acc{color:var(--acc2);border-color:var(--acc2)}
+.btn{background:var(--acc);color:#fff;border:0;border-radius:10px;padding:9px 16px;font-weight:700;cursor:pointer;transition:.15s;display:inline-flex;gap:6px;align-items:center}
+.btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn.ghost{background:var(--card2);color:var(--tx);border:1px solid var(--line)}
+.btn.bad{background:var(--bad)}
+.btn.sm{padding:5px 10px;font-size:12.5px;border-radius:8px}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.empty{color:var(--mut);text-align:center;padding:18px;font-size:14px}
+.check{display:flex;align-items:center;gap:11px;padding:9px 11px;background:var(--card2);border-radius:10px;cursor:pointer;user-select:none;border:1px solid transparent}
+.check:hover{border-color:var(--line)}
+.check .bx{width:20px;height:20px;border-radius:6px;border:2px solid var(--line);display:grid;place-items:center;font-size:13px;color:#fff;flex:none}
+.check.done .bx{background:var(--ok);border-color:var(--ok)}
+.check.done .tt{text-decoration:line-through;color:var(--mut)}
+.check .tt{flex:1}
+.list{display:flex;flex-direction:column;gap:8px}
+.prog{height:8px;background:var(--card2);border-radius:9px;overflow:hidden;margin:6px 0 12px}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--acc2),var(--ok));transition:width .4s}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.tabs button{background:var(--card);border:1px solid var(--line);color:var(--mut);padding:7px 14px;border-radius:99px;cursor:pointer;font-weight:600}
+.tabs button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.week{display:grid;grid-template-columns:repeat(6,minmax(150px,1fr));gap:12px;overflow-x:auto;padding-bottom:6px}
+.col h4{font-size:13px;color:var(--mut);margin-bottom:8px;display:flex;justify-content:space-between;text-transform:uppercase;letter-spacing:1.5px}
+.col.today h4{color:var(--acc2)}
+.cls{background:var(--card);border:1px solid var(--line);border-top:4px solid var(--c);border-radius:12px;padding:10px 11px;margin-bottom:10px;cursor:pointer;transition:.15s}
+.cls:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.cls .n{font-weight:700;font-size:14px;line-height:1.25}
+.cls .s{color:var(--mut);font-size:12px;margin-top:3px}
+.cls .tm{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--c);margin-bottom:3px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.sp{flex:1}
+input,select{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;width:100%;outline:none}
+input:focus,select:focus{border-color:var(--acc)}
+label{display:block;font-size:12px;color:var(--mut);font-weight:600;margin:12px 0 5px;letter-spacing:.3px}
+dialog{background:var(--card);color:var(--tx);border:1px solid var(--line);border-radius:18px;padding:22px;width:min(460px,92vw);margin:auto;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+dialog::backdrop{background:rgba(5,7,18,.65);backdrop-filter:blur(4px)}
+dialog h2{font-size:18px;margin-bottom:4px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.acts{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.qrbox{display:grid;place-items:center;gap:12px;padding:6px}
+#qr{background:#fff;padding:12px;border-radius:14px;min-width:204px;min-height:204px;display:grid;place-items:center}
+.code{font-family:ui-monospace,Menlo,monospace;font-size:44px;font-weight:800;letter-spacing:10px;color:var(--acc2)}
+.cdbar{width:100%;max-width:260px;height:6px;background:var(--card2);border-radius:9px;overflow:hidden}
+.cdbar i{display:block;height:100%;background:var(--acc);width:100%}
+.hadir{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow:auto}
+.hd{display:flex;gap:10px;align-items:center;background:var(--card2);padding:8px 11px;border-radius:10px}
+.av{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff;flex:none}
+.big-in{font-family:ui-monospace,Menlo,monospace;font-size:30px;text-align:center;letter-spacing:10px;padding:14px}
+.toasts{position:fixed;right:18px;top:18px;display:flex;flex-direction:column;gap:8px;z-index:99}
+.toast{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--acc2);padding:11px 16px;border-radius:12px;box-shadow:var(--shadow);animation:in .25s;max-width:320px}
+.toast.bad{border-left-color:var(--bad)}.toast.ok{border-left-color:var(--ok)}
+@keyframes in{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+.dl{font-size:12px;font-weight:700}
+.t-item{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;background:var(--card2);border-radius:12px;padding:11px 13px;border-left:4px solid var(--c,var(--acc))}
+.t-item.done .tt{text-decoration:line-through;color:var(--mut)}
+.t-item .tt{font-weight:700}
+.t-item .sb{color:var(--mut);font-size:12.5px}
+.pdays{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.members{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.mem{display:flex;align-items:center;gap:6px;background:var(--card2);padding:3px 10px 3px 4px;border-radius:99px;font-size:13px}
+.mem .av{width:22px;height:22px;font-size:11px}
+.note{color:var(--mut);font-size:12.5px;margin-top:10px}
+@media(max-width:900px){
+  .app{grid-template-columns:1fr}
+  aside{position:fixed;bottom:0;top:auto;left:0;right:0;height:auto;flex-direction:row;padding:6px 8px;z-index:50;border-right:0;border-top:1px solid var(--line)}
+  aside .brand,.side-foot,.profile{display:none}
+  nav{flex-direction:row;width:100%;justify-content:space-around}
+  nav button{flex-direction:column;gap:2px;padding:6px 8px;font-size:11px;box-shadow:none!important;position:relative}
+  nav .badge{position:absolute;top:0;right:2px;margin:0}
+  main{padding:20px 16px 90px}
+  .g2,.g3,.g4{grid-template-columns:1fr 1fr}
+  .g2{grid-template-columns:1fr}
+  .clock{text-align:left}
+  h1{font-size:23px}
+}
+@media(max-width:560px){.g3,.g4{grid-template-columns:1fr}.fr{grid-template-columns:1fr}.mobtools{display:flex!important}}
+.mobtools{display:none;gap:8px;margin-bottom:14px;align-items:center}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand"><div class="lg">🗓️</div><div>Smart Piket<small>Jadwal Kelas</small></div></div>
+    <nav id="nav"></nav>
+    <div class="side-foot">
+      <div class="profile">
+        <div class="nm" id="pn"></div>
+        <div class="rl" id="pr"></div>
+        <div class="seg" id="roleSeg">
+          <button data-role="mahasiswa">Mahasiswa</button>
+          <button data-role="dosen">Dosen</button>
+        </div>
+      </div>
+      <div class="mini">
+        <button class="btn ghost sm" data-act="theme">🌓 Tema</button>
+        <button class="btn ghost sm" data-act="notif">🔔 Pengingat</button>
+      </div>
+      <button class="btn ghost sm" data-act="profil">✏️ Ubah Nama</button>
+      <button class="btn ghost sm" data-act="reset">↺ Reset Data Demo</button>
+    </div>
+  </aside>
+  <main id="main"></main>
+</div>
+<dialog id="dlg"></dialog>
+<div class="toasts" id="toasts"></div>
+
+<script>
+/* ============ UTIL ============ */
+const $ = (s, e = document) => e.querySelector(s);
+const $$ = (s, e = document) => [...e.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Math.random().toString(36).slice(2, 9);
+const HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+const WARNA = ['#8b7cf6','#2dd4bf','#f43f7a','#fbbf24','#38bdf8','#fb923c','#a3e635'];
+const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+const pad = n => String(n).padStart(2, '0');
+const isoDate = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const nowMin = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60; };
+const fmtDur = m => { m = Math.max(0, Math.ceil(m)); const h = Math.floor(m / 60); return h ? `${h}j ${m % 60}m` : `${m} mnt`; };
+const initial = n => (n || '?').trim().charAt(0).toUpperCase();
+const addDays = n => { const d = new Date(); d.setDate(d.getDate() + n); return isoDate(d); };
+
+/* ============ DATA ============ */
+const KEY = 'smartpiket_v1';
+function demo() {
+  return {
+    role: 'mahasiswa',
+    user: { nama: 'Mahasiswa UNIMED' },
+    jadwal: [
+      { id: uid(), mk: 'Pemrograman Web', dosen: 'Dr. Siregar, M.Kom', ruang: 'Lab Komputer 2', hari: 1, mulai: '08:00', selesai: '10:30', warna: WARNA[0] },
+      { id: uid(), mk: 'Basis Data', dosen: 'Ir. Nasution, M.T', ruang: 'Ruang B-204', hari: 1, mulai: '13:00', selesai: '15:00', warna: WARNA[1] },
+      { id: uid(), mk: 'Jaringan Komputer', dosen: 'Dr. Lubis, M.Kom', ruang: 'Lab Jaringan', hari: 2, mulai: '09:00', selesai: '11:30', warna: WARNA[4] },
+      { id: uid(), mk: 'Pemrograman Web', dosen: 'Dr. Siregar, M.Kom', ruang: 'Lab Komputer 2', hari: 3, mulai: '08:00', selesai: '10:30', warna: WARNA[0] },
+      { id: uid(), mk: 'Rekayasa Perangkat Lunak', dosen: 'Dra. Harahap, M.Cs', ruang: 'Ruang A-101', hari: 3, mulai: '13:00', selesai: '15:30', warna: WARNA[2] },
+      { id: uid(), mk: 'Kecerdasan Buatan', dosen: 'Dr. Pane, M.Kom', ruang: 'Ruang B-110', hari: 4, mulai: '10:00', selesai: '12:00', warna: WARNA[3] },
+      { id: uid(), mk: 'Etika Profesi TI', dosen: 'Drs. Tampubolon, M.Si', ruang: 'Ruang A-203', hari: 5, mulai: '08:00', selesai: '09:40', warna: WARNA[5] },
+      { id: uid(), mk: 'Basis Data (Praktikum)', dosen: 'Ir. Nasution, M.T', ruang: 'Lab Komputer 1', hari: 5, mulai: '13:30', selesai: '16:00', warna: WARNA[1] }
+    ],
+    piket: {
+      1: { anggota: ['Andi', 'Sari', 'Budi'], tugas: ['Hapus papan tulis', 'Sapu lantai', 'Buang sampah'] },
+      2: { anggota: ['Dina', 'Rizky', 'Putri'], tugas: ['Hapus papan tulis', 'Rapikan kursi', 'Siram tanaman'] },
+      3: { anggota: ['Fajar', 'Nisa', 'Hendra'], tugas: ['Hapus papan tulis', 'Sapu lantai', 'Lap meja'] },
+      4: { anggota: ['Mega', 'Yoga', 'Intan'], tugas: ['Hapus papan tulis', 'Buang sampah', 'Rapikan kursi'] },
+      5: { anggota: ['Bagas', 'Lia', 'Reza'], tugas: ['Hapus papan tulis', 'Sapu lantai', 'Matikan AC & lampu'] },
+      6: { anggota: ['Tari', 'Dimas'], tugas: ['Rapikan kursi', 'Matikan AC & lampu'] }
+    },
+    piketDone: {},
+    tugas: [
+      { id: uid(), judul: 'Mini Riset: PDO vs MySQLi', mk: 'Pemrograman Web', deadline: addDays(7), done: false },
+      { id: uid(), judul: 'Product Concept Paper', mk: 'Pemrograman Web', deadline: addDays(5), done: false },
+      { id: uid(), judul: 'ERD Sistem Perpustakaan', mk: 'Basis Data', deadline: addDays(2), done: false },
+      { id: uid(), judul: 'Laporan Praktikum Subnetting', mk: 'Jaringan Komputer', deadline: addDays(-1), done: false },
+      { id: uid(), judul: 'Quiz Etika Profesi', mk: 'Etika Profesi TI', deadline: addDays(-3), done: true }
+    ],
+    absensi: [],
+    sesi: null
+  };
+}
+let S = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || demo(); } catch (e) { return demo(); } })();
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+let view = 'dashboard';
+let dayTab = (() => { const d = new Date().getDay(); return d === 0 ? 1 : d; })();
+
+/* ============ TOAST ============ */
+function toast(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + type; el.textContent = msg;
+  $('#toasts').appendChild(el);
+  setTimeout(() => el.remove(), 4200);
+}
+
+/* ============ MODAL FORM ============ */
+function openForm(title, fields, onSubmit, extra) {
+  const dlg = $('#dlg');
+  dlg.innerHTML = `<form method="dialog" id="frm"><h2>${esc(title)}</h2>
+    ${fields.map(f => {
+      if (f.row) return `<div class="fr">${f.row.map(g => fld(g)).join('')}</div>`;
+      return fld(f);
+    }).join('')}
+    <div class="acts">${extra ? `<button type="button" class="btn bad" id="xdel" style="margin-right:auto">Hapus</button>` : ''}
+    <button type="button" class="btn ghost" id="xc">Batal</button><button class="btn" type="submit">Simpan</button></div></form>`;
+  function fld(f) {
+    if (f.type === 'select') return `<div><label>${f.label}</label><select name="${f.k}">${f.options.map(o => `<option value="${esc(o[0])}" ${String(o[0]) === String(f.value) ? 'selected' : ''}>${esc(o[1])}</option>`).join('')}</select></div>`;
+    return `<div><label>${f.label}</label><input name="${f.k}" type="${f.type || 'text'}" value="${esc(f.value ?? '')}" ${f.req === false ? '' : 'required'} ${f.ph ? `placeholder="${esc(f.ph)}"` : ''}></div>`;
+  }
+  $('#xc').onclick = () => dlg.close();
+  if (extra) $('#xdel').onclick = () => { extra(); dlg.close(); };
+  $('#frm').onsubmit = e => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target));
+    if (onSubmit(data) !== false) dlg.close();
+  };
+  dlg.showModal();
+}
+
+/* ============ JADWAL HELPERS ============ */
+const byTime = (a, b) => toMin(a.mulai) - toMin(b.mulai);
+const jadwalHari = h => S.jadwal.filter(j => j.hari === h).sort(byTime);
+function bentrok(j, ignoreId) {
+  return S.jadwal.find(o => o.id !== ignoreId && o.hari === j.hari && toMin(j.mulai) < toMin(o.selesai) && toMin(o.mulai) < toMin(j.selesai));
+}
+const todayKey = () => new Date().getDay();
+function currentClass() {
+  const n = nowMin();
+  return jadwalHari(todayKey()).find(j => toMin(j.mulai) <= n && n < toMin(j.selesai));
+}
+function nextClass() {
+  const n = nowMin();
+  return jadwalHari(todayKey()).find(j => toMin(j.mulai) > n);
+}
+function dayDiff(iso) {
+  const a = new Date(isoDate() + 'T00:00:00'), b = new Date(iso + 'T00:00:00');
+  return Math.round((b - a) / 864e5);
+}
+function dlInfo(t) {
+  if (t.done) return { txt: 'Selesai', cls: 'ok' };
+  const d = dayDiff(t.deadline);
+  if (d < 0) return { txt: `Terlambat ${-d} hari`, cls: 'bad' };
+  if (d === 0) return { txt: 'Hari ini!', cls: 'bad' };
+  if (d <= 2) return { txt: `${d} hari lagi`, cls: 'warn' };
+  return { txt: `${d} hari lagi`, cls: 'acc' };
+}
+const tugasAktif = () => S.tugas.filter(t => !t.done && dayDiff(t.deadline) <= 2).length;
+
+/* ============ ABSENSI TOKEN ============ */
+function tok(seed, w) {
+  let h = 2166136261; const s = seed + ':' + w;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return String((h >>> 0) % 1000000).padStart(6, '0');
+}
+const win = () => Math.floor(Date.now() / 30000);
+const curCode = () => S.sesi ? tok(S.sesi.seed, win()) : '';
+function validCode(code) {
+  if (!S.sesi) return false;
+  const w = win();
+  return code === tok(S.sesi.seed, w) || code === tok(S.sesi.seed, w - 1);
+}
+const hadirSesi = () => S.sesi ? S.absensi.filter(a => a.jid === S.sesi.jid && a.tgl === S.sesi.tgl) : [];
+
+/* ============ RENDER ============ */
+const NAV = [
+  ['dashboard', '🏠', 'Dashboard'],
+  ['jadwal', '📅', 'Jadwal Kelas'],
+  ['piket', '🧹', 'Piket Kelas'],
+  ['absen', '📲', 'Absensi QR'],
+  ['tugas', '📝', 'Tugas']
+];
+function renderNav() {
+  const b = tugasAktif();
+  $('#nav').innerHTML = NAV.map(([k, ic, lb]) =>
+    `<button data-view="${k}" class="${view === k ? 'on' : ''}"><span class="ic">${ic}</span>${lb}${k === 'tugas' && b ? `<span class="badge">${b}</span>` : ''}</button>`).join('');
+  $('#pn').textContent = S.user.nama;
+  $('#pr').textContent = S.role === 'dosen' ? 'Mode Dosen' : 'Mode Mahasiswa';
+  $$('#roleSeg button').forEach(b => b.classList.toggle('on', b.dataset.role === S.role));
+}
+function head(eyebrow, title, right = '') {
+  return `<div class="mobtools"><button class="btn ghost sm" data-act="theme">🌓</button><button class="btn ghost sm" data-act="notif">🔔</button>
+    <button class="btn ghost sm" data-act="role">${S.role === 'dosen' ? '👨‍🏫 Dosen' : '🎓 Mahasiswa'}</button><button class="btn ghost sm" data-act="profil">✏️</button></div>
+    <div class="top"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1></div>${right}</div>`;
+}
+
+function render() {
+  renderNav();
+  const m = $('#main');
+  m.innerHTML = ({ dashboard: vDash, jadwal: vJadwal, piket: vPiket, absen: vAbsen, tugas: vTugas })[view]();
+  if (view === 'absen') drawQR(true);
+  tick();
+}
+
+/* ---- Dashboard ---- */
+function vDash() {
+  const d = new Date(), tk = todayKey();
+  const list = jadwalHari(tk);
+  const cur = currentClass(), nxt = nextClass();
+  const n = nowMin();
+  let hero;
+  if (cur) {
+    const tot = toMin(cur.selesai) - toMin(cur.mulai), el = n - toMin(cur.mulai);
+    hero = `<div class="card hero"><div class="lbl">● Sedang berlangsung</div><div class="mk">${esc(cur.mk)}</div>
+      <div class="meta"><span>👤 ${esc(cur.dosen)}</span><span>📍 ${esc(cur.ruang)}</span><span>🕒 ${cur.mulai}–${cur.selesai}</span></div>
+      <div class="cd" data-cd="${cur.selesai}" data-mode="end">…</div>
+      <div class="bar"><i style="width:${Math.min(100, el / tot * 100)}%"></i></div>
+      <div class="row" style="margin-top:14px"><button class="btn" data-view="absen">📲 Absen Sekarang</button></div></div>`;
+  } else if (nxt) {
+    hero = `<div class="card hero"><div class="lbl">⏭ Kelas berikutnya</div><div class="mk">${esc(nxt.mk)}</div>
+      <div class="meta"><span>👤 ${esc(nxt.dosen)}</span><span>📍 ${esc(nxt.ruang)}</span><span>🕒 ${nxt.mulai}–${nxt.selesai}</span></div>
+      <div class="cd" data-cd="${nxt.mulai}" data-mode="start">…</div>
+      <div class="note">sebelum kelas dimulai</div></div>`;
+  } else {
+    hero = `<div class="card hero"><div class="lbl">${tk === 0 ? 'Hari Minggu' : 'Selesai'}</div><div class="mk">${tk === 0 ? 'Libur, waktunya istirahat 😴' : 'Tidak ada kelas lagi hari ini 🎉'}</div>
+      <div class="meta"><span>Cek jadwal besok di menu Jadwal Kelas</span></div></div>`;
+  }
+  const pk = S.piket[tk];
+  const pdone = pk ? pk.tugas.filter((_, i) => S.piketDone[`${isoDate()}|${tk}|${i}`]).length : 0;
+  const hadirMinggu = S.absensi.filter(a => a.nama === S.user.nama && dayDiff(a.tgl) >= -6).length;
+  const selesai = S.tugas.filter(t => t.done).length;
+  return head('Ringkasan Hari Ini', `Halo, <span>${esc(S.user.nama.split(' ')[0])}</span> 👋`,
+    `<div class="clock"><div class="t" id="clk">--:--:--</div><div class="d">${HARI[tk]}, ${d.getDate()} ${d.toLocaleString('id-ID', { month: 'long' })} ${d.getFullYear()}</div></div>`) + `
+  <div class="grid g2">
+    <div class="grid">${hero}
+      <div class="grid g3">
+        <div class="card stat"><span class="ico">📚</span><div class="v">${list.length}</div><div class="l">Kelas hari ini</div></div>
+        <div class="card stat"><span class="ico">✅</span><div class="v">${hadirMinggu}</div><div class="l">Hadir 7 hari terakhir</div></div>
+        <div class="card stat"><span class="ico">🎯</span><div class="v">${selesai}/${S.tugas.length}</div><div class="l">Tugas selesai</div></div>
+      </div>
+      <div class="card"><h3>📅 Jadwal ${HARI[tk]}<span class="r">${list.length} kelas</span></h3>
+        <div class="tl">${list.length ? list.map(j => {
+          const now = toMin(j.mulai) <= n && n < toMin(j.selesai), past = n >= toMin(j.selesai);
+          return `<div class="tli ${now ? 'now' : ''} ${past ? 'past' : ''}" style="--c:${j.warna}"><div class="tm">${j.mulai}<br>${j.selesai}</div>
+            <div><div class="nm">${esc(j.mk)}</div><div class="sb">${esc(j.dosen)} · ${esc(j.ruang)}</div></div>
+            ${now ? '<span class="pill ok">Berlangsung</span>' : past ? '<span class="pill">Selesai</span>' : '<span class="pill acc">Akan datang</span>'}</div>`;
+        }).join('') : '<div class="empty">Tidak ada kelas hari ini.</div>'}</div></div>
+    </div>
+    <div class="grid" style="align-content:start">
+      <div class="card"><h3>🧹 Piket Hari Ini<span class="r">${pk ? pdone + '/' + pk.tugas.length : '-'}</span></h3>
+        ${pk ? `<div class="prog"><i style="width:${pk.tugas.length ? pdone / pk.tugas.length * 100 : 0}%"></i></div>
+        <div class="members">${pk.anggota.map(a => `<span class="mem"><span class="av">${initial(a)}</span>${esc(a)}</span>`).join('')}</div>
+        <div class="list">${pk.tugas.map((t, i) => {
+          const dn = S.piketDone[`${isoDate()}|${tk}|${i}`];
+          return `<div class="check ${dn ? 'done' : ''}" data-act="ptoggle" data-h="${tk}" data-i="${i}"><span class="bx">${dn ? '✓' : ''}</span><span class="tt">${esc(t)}</span></div>`;
+        }).join('')}</div>` : '<div class="empty">Tidak ada piket hari ini 🎉</div>'}
+      </div>
+      <div class="card"><h3>⏰ Deadline Terdekat<span class="r"><a href="#" data-view="tugas" style="color:inherit">Lihat semua</a></span></h3>
+        <div class="list">${S.tugas.filter(t => !t.done).sort((a, b) => a.deadline.localeCompare(b.deadline)).slice(0, 4).map(t => {
+          const i = dlInfo(t);
+          return `<div class="t-item" style="--c:var(--${i.cls === 'acc' ? 'acc2' : i.cls})"><span></span><div><div class="tt">${esc(t.judul)}</div><div class="sb">${esc(t.mk)}</div></div><span class="pill ${i.cls}">${i.txt}</span></div>`;
+        }).join('') || '<div class="empty">Semua tugas beres ✨</div>'}</div></div>
+    </div>
+  </div>`;
+}
+
+/* ---- Jadwal ---- */
+function vJadwal() {
+  const tk = todayKey();
+  return head('Manajemen Jadwal', 'Jadwal <span>Kelas</span>', `<button class="btn" data-act="addJadwal">＋ Tambah Kelas</button>`) + `
+  <div class="week">${[1, 2, 3, 4, 5, 6].map(h => `<div class="col ${h === tk ? 'today' : ''}"><h4><span>${HARI[h]}</span><span>${jadwalHari(h).length}</span></h4>
+    ${jadwalHari(h).map(j => `<div class="cls" style="--c:${j.warna}" data-act="editJadwal" data-id="${j.id}">
+      <div class="tm">${j.mulai} – ${j.selesai}</div><div class="n">${esc(j.mk)}</div><div class="s">📍 ${esc(j.ruang)}</div><div class="s">👤 ${esc(j.dosen)}</div></div>`).join('') || '<div class="empty" style="padding:10px">—</div>'}
+  </div>`).join('')}</div>
+  <p class="note">Klik kartu untuk mengubah atau menghapus. Sistem otomatis mendeteksi jadwal yang bentrok di ruang/hari yang sama.</p>`;
+}
+function jadwalForm(j) {
+  const isNew = !j;
+  j = j || { mk: '', dosen: '', ruang: '', hari: dayTab, mulai: '08:00', selesai: '10:00', warna: WARNA[Math.floor(Math.random() * WARNA.length)] };
+  openForm(isNew ? 'Tambah Kelas' : 'Ubah Kelas', [
+    { k: 'mk', label: 'Mata Kuliah', value: j.mk },
+    { k: 'dosen', label: 'Dosen Pengampu', value: j.dosen },
+    { k: 'ruang', label: 'Ruang', value: j.ruang },
+    { k: 'hari', label: 'Hari', type: 'select', value: j.hari, options: [1, 2, 3, 4, 5, 6].map(h => [h, HARI[h]]) },
+    { row: [{ k: 'mulai', label: 'Mulai', type: 'time', value: j.mulai }, { k: 'selesai', label: 'Selesai', type: 'time', value: j.selesai }] },
+    { k: 'warna', label: 'Warna', type: 'select', value: j.warna, options: WARNA.map((c, i) => [c, 'Warna ' + (i + 1)]) }
+  ], d => {
+    d.hari = +d.hari;
+    if (toMin(d.selesai) <= toMin(d.mulai)) { toast('Jam selesai harus setelah jam mulai', 'bad'); return false; }
+    const b = bentrok(d, j.id);
+    if (b) { toast(`Bentrok dengan "${b.mk}" (${b.mulai}–${b.selesai})`, 'bad'); return false; }
+    if (isNew) S.jadwal.push({ id: uid(), ...d }); else Object.assign(j, d);
+    save(); render(); toast('Jadwal tersimpan', 'ok');
+  }, isNew ? null : () => { S.jadwal = S.jadwal.filter(x => x.id !== j.id); save(); render(); toast('Kelas dihapus'); });
+}
+
+/* ---- Piket ---- */
+function vPiket() {
+  const tk = todayKey();
+  return head('Roster Kebersihan', 'Piket <span>Kelas</span>') + `<div class="pdays">${[1, 2, 3, 4, 5, 6].map(h => {
+    const p = S.piket[h] || { anggota: [], tugas: [] };
+    const dn = p.tugas.filter((_, i) => S.piketDone[`${isoDate()}|${h}|${i}`]).length;
+    const isT = h === tk;
+    return `<div class="card" ${isT ? 'style="border-color:var(--acc2)"' : ''}><h3>${HARI[h]} ${isT ? '<span class="pill acc">Hari ini</span>' : ''}<span class="r"><a href="#" data-act="editPiket" data-h="${h}" style="color:var(--acc)">✏️ Edit</a></span></h3>
+      <div class="members">${p.anggota.map(a => `<span class="mem"><span class="av">${initial(a)}</span>${esc(a)}</span>`).join('') || '<span class="note">Belum ada anggota</span>'}</div>
+      ${isT ? `<div class="prog"><i style="width:${p.tugas.length ? dn / p.tugas.length * 100 : 0}%"></i></div>
+      <div class="list">${p.tugas.map((t, i) => { const d = S.piketDone[`${isoDate()}|${h}|${i}`]; return `<div class="check ${d ? 'done' : ''}" data-act="ptoggle" data-h="${h}" data-i="${i}"><span class="bx">${d ? '✓' : ''}</span><span class="tt">${esc(t)}</span></div>`; }).join('')}</div>`
+      : `<div class="list">${p.tugas.map(t => `<div class="check" style="cursor:default"><span class="bx"></span><span class="tt">${esc(t)}</span></div>`).join('')}</div>`}
+    </div>`;
+  }).join('')}</div><p class="note">Checklist hanya bisa dicentang pada hari piket yang bersangkutan dan otomatis reset setiap hari.</p>`;
+}
+function piketForm(h) {
+  const p = S.piket[h] || { anggota: [], tugas: [] };
+  openForm(`Piket ${HARI[h]}`, [
+    { k: 'anggota', label: 'Anggota (pisahkan dengan koma)', value: p.anggota.join(', '), req: false },
+    { k: 'tugas', label: 'Daftar tugas piket (pisahkan dengan koma)', value: p.tugas.join(', '), req: false }
+  ], d => {
+    const sp = s => s.split(',').map(x => x.trim()).filter(Boolean);
+    S.piket[h] = { anggota: sp(d.anggota), tugas: sp(d.tugas) };
+    save(); render(); toast('Piket diperbarui', 'ok');
+  });
+}
+
+/* ---- Absensi ---- */
+function vAbsen() {
+  const cur = currentClass();
+  if (S.role === 'dosen') {
+    const opts = S.jadwal.filter(j => j.hari === todayKey()).sort(byTime);
+    const sj = S.sesi ? S.jadwal.find(j => j.id === S.sesi.jid) : null;
+    return head('Presensi Digital', 'Absensi <span>QR Dinamis</span>') + `
+    <div class="grid g2">
+      <div class="card"><h3>🎛️ Sesi Absensi</h3>
+        ${S.sesi && sj ? `<div class="qrbox"><div class="pill ok">● Sesi terbuka — ${esc(sj.mk)}</div><div id="qr"></div>
+          <div class="code" id="code">------</div><div class="cdbar"><i id="cdb"></i></div>
+          <div class="note" style="text-align:center">Kode berganti otomatis tiap 30 detik agar tidak bisa dibagikan ke teman yang tidak hadir.</div>
+          <button class="btn bad" data-act="closeSesi">⏹ Tutup Sesi</button></div>`
+        : opts.length ? `<label>Pilih kelas hari ini</label><select id="sesiSel">${opts.map(j => `<option value="${j.id}" ${cur && cur.id === j.id ? 'selected' : ''}>${j.mulai} · ${esc(j.mk)}</option>`).join('')}</select>
+          <div class="acts" style="justify-content:flex-start"><button class="btn" data-act="openSesi">▶ Buka Sesi Absensi</button></div>`
+        : '<div class="empty">Tidak ada kelas terjadwal hari ini.</div>'}
+      </div>
+      <div class="card"><h3>👥 Mahasiswa Hadir<span class="r" id="hcount">${hadirSesi().length}</span></h3><div class="hadir" id="hlist">${hadirHTML()}</div></div>
+    </div>
+    <div class="card" style="margin-top:16px"><h3>🗂️ Rekap Terakhir</h3>${rekapHTML()}</div>`;
+  }
+  const sel = S.jadwal.filter(j => j.hari === todayKey()).sort(byTime);
+  const mine = S.absensi.filter(a => a.nama === S.user.nama).slice(-6).reverse();
+  return head('Presensi Digital', 'Absen <span>Kehadiran</span>') + `
+  <div class="grid g2">
+    <div class="card"><h3>🔢 Masukkan Kode Kelas</h3>
+      ${S.sesi ? `<span class="pill ok">Ada sesi terbuka: ${esc((S.jadwal.find(j => j.id === S.sesi.jid) || {}).mk || '')}</span>` : '<span class="pill warn">Belum ada sesi dibuka dosen</span>'}
+      <label>Kode 6 digit dari layar dosen</label>
+      <input class="big-in" id="kode" maxlength="6" inputmode="numeric" placeholder="••••••" autocomplete="off">
+      <div class="acts" style="justify-content:stretch"><button class="btn" style="width:100%;justify-content:center" data-act="submitAbsen">✔ Kirim Kehadiran</button></div>
+      <p class="note">💡 Demo: buka halaman ini di dua tab. Pilih mode Dosen di tab pertama untuk membuka sesi, lalu masukkan kode di tab kedua (mode Mahasiswa). Data tersinkron otomatis.</p>
+    </div>
+    <div class="card"><h3>🕘 Riwayat Absen Saya</h3><div class="list">${mine.map(a => {
+      const j = S.jadwal.find(x => x.id === a.jid);
+      return `<div class="t-item" style="--c:var(--ok)"><span>✅</span><div><div class="tt">${esc(j ? j.mk : 'Kelas')}</div><div class="sb">${a.tgl} · ${a.jam}</div></div><span class="pill ok">Hadir</span></div>`;
+    }).join('') || '<div class="empty">Belum ada riwayat absensi.</div>'}</div></div>
+  </div>`;
+}
+function hadirHTML() {
+  const h = hadirSesi();
+  return h.length ? h.slice().reverse().map(a => `<div class="hd"><span class="av">${initial(a.nama)}</span><div style="flex:1"><b>${esc(a.nama)}</b></div><span class="pill ok">${a.jam}</span></div>`).join('') : '<div class="empty">Belum ada yang absen.</div>';
+}
+function rekapHTML() {
+  const g = {};
+  S.absensi.forEach(a => { const k = a.jid + '|' + a.tgl; (g[k] = g[k] || []).push(a); });
+  const rows = Object.entries(g).sort((a, b) => b[0].split('|')[1].localeCompare(a[0].split('|')[1])).slice(0, 6);
+  return rows.length ? `<div class="list">${rows.map(([k, v]) => {
+    const [jid, tgl] = k.split('|'); const j = S.jadwal.find(x => x.id === jid);
+    return `<div class="t-item" style="--c:${j ? j.warna : 'var(--acc)'}"><span>📋</span><div><div class="tt">${esc(j ? j.mk : 'Kelas')}</div><div class="sb">${tgl}</div></div><span class="pill acc">${v.length} hadir</span></div>`;
+  }).join('')}</div>` : '<div class="empty">Belum ada data absensi.</div>';
+}
+let lastWin = null;
+function drawQR(force) {
+  if (!S.sesi || S.role !== 'dosen' || !$('#qr')) return;
+  const w = win();
+  if (!force && w === lastWin) return;
+  lastWin = w;
+  const code = curCode();
+  $('#code').textContent = code;
+  const box = $('#qr'); box.innerHTML = '';
+  if (window.QRCode) {
+    new QRCode(box, { text: `SMARTPIKET|${S.sesi.jid}|${code}`, width: 180, height: 180, colorDark: '#0b0e1a', colorLight: '#ffffff' });
+  } else {
+    box.innerHTML = '<span style="color:#333;font-size:12px;text-align:center">QR membutuhkan internet.<br>Gunakan kode 6 digit.</span>';
+  }
+}
+
+/* ---- Tugas ---- */
+let tFilter = 'aktif';
+function vTugas() {
+  let l = S.tugas.slice().sort((a, b) => a.deadline.localeCompare(b.deadline));
+  if (tFilter === 'aktif') l = l.filter(t => !t.done);
+  if (tFilter === 'selesai') l = l.filter(t => t.done);
+  return head('Pengingat Deadline', 'Daftar <span>Tugas</span>', `<button class="btn" data-act="addTugas">＋ Tambah Tugas</button>`) + `
+  <div class="tabs">${[['aktif', 'Belum selesai'], ['selesai', 'Selesai'], ['semua', 'Semua']].map(([k, l]) => `<button class="${tFilter === k ? 'on' : ''}" data-act="tf" data-f="${k}">${l}</button>`).join('')}</div>
+  <div class="list">${l.map(t => {
+    const i = dlInfo(t), j = S.jadwal.find(x => x.mk === t.mk);
+    return `<div class="t-item ${t.done ? 'done' : ''}" style="--c:${j ? j.warna : 'var(--acc)'}">
+      <div class="check" style="padding:0;background:none" data-act="ttoggle" data-id="${t.id}"><span class="bx" style="${t.done ? '' : ''}">${t.done ? '✓' : ''}</span></div>
+      <div><div class="tt">${esc(t.judul)}</div><div class="sb">${esc(t.mk)} · tenggat ${t.deadline}</div></div>
+      <div class="row"><span class="pill ${i.cls}">${i.txt}</span><button class="btn ghost sm" data-act="delTugas" data-id="${t.id}">🗑</button></div></div>`;
+  }).join('') || '<div class="card empty">Tidak ada tugas di sini ✨</div>'}</div>`;
+}
+
+/* ============ LIVE TICK ============ */
+let lastMinute = -1;
+function tick() {
+  const d = new Date();
+  const clk = $('#clk'); if (clk) clk.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  const cd = $('[data-cd]');
+  if (cd) {
+    const diff = toMin(cd.dataset.cd) - nowMin();
+    const s = Math.max(0, Math.round(diff * 60));
+    cd.textContent = `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s % 3600 / 60))}:${pad(s % 60)}`;
+  }
+  const m = d.getMinutes();
+  if (m !== lastMinute) { lastMinute = m; if (view === 'dashboard' && lastMinute !== -1 && $('#clk')) { /* refresh hero/timeline each minute */ const y = scrollY; $('#main').innerHTML = vDash(); scrollTo(0, y); } checkReminders(); }
+  if (view === 'absen' && S.role === 'dosen' && S.sesi) {
+    drawQR();
+    const bar = $('#cdb'); if (bar) bar.style.width = (100 - (Date.now() % 30000) / 300) + '%';
+    const hl = $('#hlist'); if (hl) { const h = hadirHTML(); if (hl.innerHTML !== h) hl.innerHTML = h; $('#hcount').textContent = hadirSesi().length; }
+  }
+}
+setInterval(tick, 1000);
+
+/* ============ REMINDERS ============ */
+const reminded = new Set();
+function checkReminders() {
+  const tk = todayKey(), n = nowMin();
+  jadwalHari(tk).forEach(j => {
+    const diff = toMin(j.mulai) - n;
+    const key = isoDate() + j.id;
+    if (diff > 0 && diff <= 10 && !reminded.has(key)) {
+      reminded.add(key);
+      const msg = `${j.mk} dimulai ${fmtDur(diff)} lagi di ${j.ruang}`;
+      toast('⏰ ' + msg);
+      try { if (Notification.permission === 'granted') new Notification('Kelas segera dimulai', { body: msg }); } catch (e) {}
+    }
+  });
+}
+
+/* ============ EVENTS ============ */
+document.addEventListener('click', e => {
+  const v = e.target.closest('[data-view]');
+  if (v) { e.preventDefault(); view = v.dataset.view; render(); scrollTo(0, 0); return; }
+  const r = e.target.closest('#roleSeg [data-role]');
+  if (r) { S.role = r.dataset.role; save(); render(); return; }
+  const a = e.target.closest('[data-act]');
+  if (!a) return;
+  e.preventDefault();
+  const act = a.dataset.act;
+  switch (act) {
+    case 'theme': {
+      const r = document.documentElement; const n = r.dataset.theme === 'light' ? 'dark' : 'light';
+      r.dataset.theme = n; try { localStorage.setItem('sp_theme', n); } catch (e) {} break;
+    }
+    case 'role': S.role = S.role === 'dosen' ? 'mahasiswa' : 'dosen'; save(); render(); break;
+    case 'notif':
+      if (!('Notification' in window)) return toast('Browser tidak mendukung notifikasi', 'bad');
+      Notification.requestPermission().then(p => toast(p === 'granted' ? 'Pengingat kelas aktif 🔔' : 'Notifikasi tidak diizinkan', p === 'granted' ? 'ok' : 'bad'));
+      break;
+    case 'profil': openForm('Ubah Nama', [{ k: 'nama', label: 'Nama kamu', value: S.user.nama }], d => { S.user.nama = d.nama.trim(); save(); render(); }); break;
+    case 'reset': if (confirm('Kembalikan semua data ke data demo?')) { S = demo(); save(); render(); toast('Data direset', 'ok'); } break;
+    case 'addJadwal': jadwalForm(); break;
+    case 'editJadwal': jadwalForm(S.jadwal.find(j => j.id === a.dataset.id)); break;
+    case 'editPiket': piketForm(+a.dataset.h); break;
+    case 'ptoggle': {
+      const h = +a.dataset.h, i = +a.dataset.i;
+      if (h !== todayKey()) return toast('Hanya bisa dicentang di hari piketnya', 'bad');
+      const k = `${isoDate()}|${h}|${i}`; S.piketDone[k] = !S.piketDone[k];
+      save(); const y = scrollY; render(); scrollTo(0, y); break;
+    }
+    case 'openSesi': {
+      const jid = $('#sesiSel').value; lastWin = null;
+      S.sesi = { jid, seed: uid() + uid(), tgl: isoDate() }; save(); render(); toast('Sesi absensi dibuka', 'ok'); break;
+    }
+    case 'closeSesi': S.sesi = null; save(); render(); toast('Sesi ditutup'); break;
+    case 'submitAbsen': {
+      const code = $('#kode').value.trim();
+      if (!S.sesi) return toast('Belum ada sesi absensi yang dibuka', 'bad');
+      if (!validCode(code)) return toast('Kode salah atau sudah kedaluwarsa', 'bad');
+      if (S.absensi.some(x => x.jid === S.sesi.jid && x.tgl === S.sesi.tgl && x.nama === S.user.nama)) return toast('Kamu sudah absen di sesi ini', 'bad');
+      const d = new Date();
+      S.absensi.push({ id: uid(), jid: S.sesi.jid, tgl: S.sesi.tgl, nama: S.user.nama, jam: `${pad(d.getHours())}:${pad(d.getMinutes())}` });
+      save(); render(); toast('Kehadiran tercatat ✅', 'ok'); break;
+    }
+    case 'addTugas':
+      openForm('Tambah Tugas', [
+        { k: 'judul', label: 'Judul tugas', value: '' },
+        { k: 'mk', label: 'Mata kuliah', type: 'select', value: '', options: [...new Set(S.jadwal.map(j => j.mk))].map(m => [m, m]) },
+        { k: 'deadline', label: 'Tenggat', type: 'date', value: addDays(3) }
+      ], d => { S.tugas.push({ id: uid(), done: false, ...d }); save(); render(); toast('Tugas ditambahkan', 'ok'); });
+      break;
+    case 'ttoggle': { const t = S.tugas.find(x => x.id === a.dataset.id); t.done = !t.done; save(); render(); break; }
+    case 'delTugas': S.tugas = S.tugas.filter(x => x.id !== a.dataset.id); save(); render(); break;
+    case 'tf': tFilter = a.dataset.f; render(); break;
+  }
+});
+window.addEventListener('storage', e => {
+  if (e.key === KEY) { try { S = JSON.parse(e.newValue) || S; } catch (x) {} if (!$('#dlg').open && document.activeElement.id !== 'kode') render(); }
+});
+
+/* ============ INIT ============ */
+try { const t = localStorage.getItem('sp_theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+render();
+</script>
+</body>
+</html>
